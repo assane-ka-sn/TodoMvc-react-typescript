@@ -8,10 +8,6 @@ export default class TodoStore {
     private static i = 0
     public todos: Todo[] = []
     private callbacks: ChangeCallback[] = []
-
-    /**
-     * Crée un système d'auto increment
-     **/
     private static increment () {
         return this.i++
     }
@@ -20,9 +16,6 @@ export default class TodoStore {
         this.callbacks.forEach(cb => cb(this))
     }
 
-    /**
-     * Permet d'ajouter un écouteur
-     * */
     onChange (cb: ChangeCallback) {
         this.callbacks.push(cb)
     }
@@ -33,6 +26,7 @@ export default class TodoStore {
             title: title,
             completed: false
         }, ...this.todos]
+        this.inform()
     }
 
     removeTodo(todo: Todo): void {
@@ -41,6 +35,7 @@ export default class TodoStore {
     }
 
     toggleTodo(todo: Todo): void {
+        console.log(this)
         this.todos = this.todos.map(t => t === todo ? {...t, completed: !t.completed} : t)
         this.inform()
     }
@@ -59,4 +54,5 @@ export default class TodoStore {
         this.todos = this.todos.filter(t => !t.completed)
         this.inform()
     }
+
 }

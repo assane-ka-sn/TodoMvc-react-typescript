@@ -2,8 +2,15 @@ import * as React from 'react'
 import TodoStore from './TodoStore'
 import TodoItem from './TodoItem'
 import {Todo} from "./Interfaces";
+import * as cx from 'classnames'
 
 type FilterOptions = 'all' | 'completed' | 'active'
+
+const Filters = {
+    completed: (todo: Todo) => todo.completed,
+    active: (todo: Todo) => !todo.completed,
+    all: (todo: Todo) => true
+}
 
 interface TodoListProps { }
 
@@ -22,13 +29,14 @@ export default class TodoList extends React.Component<TodoListProps, TodoListSta
 
     constructor (props: TodoListProps) {
         super(props)
-        this.store.addTodo('Salut')
-        this.store.addTodo('les gens')
         this.state = {
-            todos: this.store.todos,
+            todos: [],
             newTodo: '',
             filter: 'all'
         }
+        this.store.onChange((store) => {
+            this.setState({todos: store.todos})
+        })
 
         // On injecte les méthodes du store en méthode du composant
         this.toggleTodo = this.store.toggleTodo.bind(this.store)
@@ -37,44 +45,88 @@ export default class TodoList extends React.Component<TodoListProps, TodoListSta
         this.clearCompleted = this.store.clearCompleted.bind(this.store)
     }
 
+    get remainingCount (): number {
+        return this.state.todos.reduce((count, todo) => !todo.completed ? count + 1 : count, 0)
+    }
+
+    get completedCount (): number {
+        return this.state.todos.reduce((count, todo) => todo.completed ? count + 1 : count, 0)
+    }
+
+    componentDidMount () {
+        this.store.addTodo('Salut')
+        this.store.addTodo('les gens')
+    }
 
     render () {
-        let { todos } = this.state
+        let { todos, newTodo, filter } = this.state
+        let todosFiltered = todos.filter(Filters[filter])
+        let remainingCount = this.remainingCount
+        let completedCount = this.completedCount
         return (<section className="todoapp">
             <header className="header">
                 <h1>todos</h1>
                 <input
                     className="new-todo"
+                    value={newTodo}
                     placeholder="What needs to be done?"
-                     />
+                    onKeyPress={this.addTodo}
+                    onInput={this.updateNewTodo}/>
             </header>
             <section className="main">
-                <input className="toggle-all" type="checkbox" />
+                { todos.length > 0 && <input className="toggle-all" type="checkbox" checked={this.remainingCount === 0} onChange={this.toggle}/>}
                 <label htmlFor="toggle-all">Mark all as complete</label>
                 <ul className="todo-list">
-                    {
-                        todos.map(todo => {
-                            return <TodoItem todo={todo} key={todo.id} />
-                        })
-                    }
+                    { todos.map(todo => {
+                        return <TodoItem todo={todo} key={todo.id}
+                            onToggle={this.toggleTodo}
+                             onDestroy={this.destroyTodo}
+                             onUpdate={this.updateTitle}
+                        />
+                    })}
                 </ul>
             </section>
             <footer className="footer">
-                <span className="todo-count"><strong>k</strong> item left</span>
+                {remainingCount > 0 && <span
+                    className="todo-count"><strong>{remainingCount}</strong> item{remainingCount > 1 && 's'} left</span>}
                 <ul className="filters">
                     <li>
-                        <a href="#/" className="selected">All</a>
+                        <a href="#/" className={cx({ selected: filter === 'all' })} onClick={this.setFilter('all')}>All</a>
                     </li>
                     <li>
-                        <a href="#/active" className="selected">Active</a>
+                        <a href="#/active" className={cx({ selected: filter === 'active' })}
+                           onClick={this.setFilter('active')}>Active</a>
                     </li>
                     <li>
-                        <a href="#/completed" className="selected">Completed</a>
+                        <a href="#/completed" className={cx({ selected: filter === 'completed' })}
+                           onClick={this.setFilter('completed')}>Completed</a>
                     </li>
                 </ul>
-                <button className="clear-completed">Clear completed</button>
+                {completedCount > 0 &&
+                <button className="clear-completed" onClick={this.clearCompleted}>Clear completed</button>}
             </footer>
         </section>)
+    }
+
+    updateNewTodo = (e: any) => {
+        this.setState({ newTodo: (e.target as HTMLInputElement).value })
+    }
+
+    addTodo = (e: any) => {
+        if (e.key === 'Enter') {
+            this.store.addTodo(this.state.newTodo)
+            this.setState({ newTodo: '' })
+        }
+    }
+
+    toggle = () => {
+        this.store.toggleAll(this.remainingCount > 0)
+    }
+
+    setFilter = (filter: FilterOptions) => {
+        return (e: any) => {
+            this.setState({ filter })
+        }
     }
 
 }
