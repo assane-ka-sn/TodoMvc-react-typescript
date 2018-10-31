@@ -20,7 +20,7 @@ interface TodoListState {
     filter: FilterOptions
 }
 
-export default class TodoList extends React.Component<TodoListProps, TodoListState> {
+export default class TodoList extends React.PureComponent<TodoListProps, TodoListState> {
     private store: TodoStore = new TodoStore()
     private toggleTodo: (todo: Todo) => void
     private destroyTodo: (todo: Todo) => void
@@ -77,7 +77,7 @@ export default class TodoList extends React.Component<TodoListProps, TodoListSta
                 { todos.length > 0 && <input className="toggle-all" type="checkbox" checked={this.remainingCount === 0} onChange={this.toggle}/>}
                 <label htmlFor="toggle-all">Mark all as complete</label>
                 <ul className="todo-list">
-                    { todos.map(todo => {
+                    { todosFiltered.map(todo => {
                         return <TodoItem todo={todo} key={todo.id}
                             onToggle={this.toggleTodo}
                              onDestroy={this.destroyTodo}
@@ -125,7 +125,7 @@ export default class TodoList extends React.Component<TodoListProps, TodoListSta
 
     setFilter = (filter: FilterOptions) => {
         return (e: any) => {
-            this.setState({ filter })
+            this.setState({ filter})
         }
     }
 
